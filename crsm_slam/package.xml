@@ -1,0 +1,22 @@
+<package>
+	<name>crsm_slam</name>
+	<version>1.0.0</version>
+	<description>ROS package for the CRSM SLAM (Critical Rays Scan Match Simultaneous Localization And Mapping)</description>
+	<maintainer email="etsardou@gmail.com">Manos Tsardoulias</maintainer> 
+	
+	<license>GPLv3.0</license>
+	
+	<url type="website">http://ros.org/wiki/crsm-slam-ros-pkg</url>
+	
+	<author>Manos Tsardoulias</author>
+	<buildtool_depend>catkin</buildtool_depend>
+	
+	<build_depend>roscpp</build_depend> 
+	<build_depend>tf</build_depend> 
+	
+	<run_depend>roscpp</run_depend> 
+	<run_depend>tf</run_depend> 
+	
+	<export>
+	</export>
+</package>
