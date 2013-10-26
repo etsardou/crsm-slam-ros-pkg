@@ -21,8 +21,21 @@
 #define CRSM_MAP_HEADER
 
 #include "crsm_mapInfo.h"
+#include <map>
 
 namespace crsm_slam{
+	
+	enum CrsmDirection{
+		RIGHT,
+		LEFT,
+		UP,
+		DOWN
+	};
+
+	struct CrsmExpansion{
+		std::map<CrsmDirection,int> expansions;
+	};
+	
 	/**
 	 @struct CrsmMap
 	 @brief Holds the occupancy grid map
@@ -45,10 +58,11 @@ namespace crsm_slam{
 		CrsmMap(unsigned int size_);
 		
 		/**
-		@brief Updates map limits
+		@brief Reallocs the map to a specific direction
+		@params exp [crsm_slam::CrsmExpansion] The expansion to be made
 		@return void
 		**/
-		void findEffectiveMapLimits(void);
+		void expandMap(CrsmExpansion exp);
 	};
 
 }

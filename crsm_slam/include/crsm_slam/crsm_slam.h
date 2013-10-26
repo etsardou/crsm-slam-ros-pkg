@@ -56,6 +56,8 @@ namespace crsm_slam{
 			tf::TransformBroadcaster _slamFrameBroadcaster; //!< The tf robpt pose broadcaster
 			tf::TransformListener _listener;				//!< Tf listener to aquire the transformation between the laser and the robot center
 			
+			CrsmExpansion expansion;
+			
 			CrsmMap map;		//!< The OGM container
 			CrsmLaser laser;	//!< The laser container
 				
@@ -81,6 +83,10 @@ namespace crsm_slam{
 			@return void
 			**/
 			void updateParameters(void);
+			
+			bool checkExpansion(int x,int y);
+			
+			void expandMap(void);
 			
 			ros::Timer _pathPublishingTimer;		//!< The trajectory publishing timer
 			ros::Timer _robotPosePublishingTimer;	//!< The robot pose publishing timer
