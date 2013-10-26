@@ -219,7 +219,7 @@ namespace crsm_slam{
 			**/
 			std::vector<CrsmPose> getTrajectory(void);
 			
-			//---------------------- Setters and getters for slamParameters ----------------------------//
+			//---------------------- Setters for slamParameters ----------------------------//
 			/**
 			@brief Sets the disparity of CRSM_SlamParameters
 			@param disparity [int] Disparity of mutation in pixels at hill climbing
@@ -362,12 +362,164 @@ namespace crsm_slam{
 			
 			/**
 			@brief Sets the base_frame of CRSM_SlamParameters
-			@param frame [std::string] Holds the base footprint frame - (x,y,yaw)
+			@param frame [std::string] Holds the base frame
 			@return void
 			**/
 			void setBaseFrame(std::string frame);
+			
+			/**
+			@brief Sets the map_frame of CRSM_SlamParameters
+			@param frame [std::string] Holds the map frame
+			@return void
+			**/
 			void setMapFrame(std::string frame);
+			
+			/**
+			@brief Sets the laser_frame of CRSM_SlamParameters
+			@param frame [std::string] Holds the laser frame
+			@return void
+			**/
 			void setLaserFrame(std::string frame);
+			
+			//------------------- Getters for slamParameters ----------------------//
+			
+			/**
+			@brief Gets the disparity of CRSM_SlamParameters
+			@return int Disparity of mutation in pixels at hill climbing
+			**/
+			int getDisparity(void);
+			
+			/**
+			@brief Gets the map_size of CRSM_SlamParameters
+			@return int Map size of initial allocated map
+			**/
+			int getInitialMapSize(void);
+			
+			/**
+			@brief Gets the ocgd of CRSM_SlamParameters
+			@return double [OC]cupancy [G]rid [D]imentionality - the width and height in meters of a pixel
+			**/
+			double getOcgd(void);
+			
+			/**
+			@brief Gets the density of CRSM_SlamParameters
+			@return double Map update density (0-127)
+			**/
+			double getDensity(void);
+			
+			/**
+			@brief Gets the obstacle_density of CRSM_SlamParameters
+			@return double Coefficient for obstacle update density (0+)
+			**/
+			double getObstacleDensity(void);
+			
+			/**
+			@brief Gets the scan_selection_meters of CRSM_SlamParameters
+			@return double Scan density lower boundary for a scan-part identification
+			**/
+			double getScanSelectionMeters(void);
+			
+			/**
+			@brief Gets the max_hill_climbing_iterations of CRSM_SlamParameters
+			@return int Maximum RRHC iterations
+			**/
+			int getMaxHillClimbingIterations(void);
+			
+			/**
+			@brief Gets the dx_laser_robotCenter of CRSM_SlamParameters
+			@return double Translation in x axis of laser in comparison to robot center
+			**/
+			double getDxLaserRobotCenter(void);
+			
+			/**
+			@brief Gets the occupancy_grid_map_freq of CRSM_SlamParameters
+			@return double The occupancy grid map publishing frequency
+			**/
+			double getOccupancyGridMapFreq(void);
+			
+			/**
+			@brief Gets the robot_pose_tf_freq of CRSM_SlamParameters
+			@return double The robot pose publishing frequency
+			**/
+			double getRobotPoseTfFreq(void);
+			
+			/**
+			@brief Gets the trajectory_freq of CRSM_SlamParameters
+			@return double The trajectory publishing frequency
+			**/
+			double getTrajectoryFreq(void);
+			
+			/**
+			@brief Gets the desired_number_of_picked_rays of CRSM_SlamParameters
+			@return int The desired number of picked rays [algorithm specific]
+			**/
+			int getDesiredNumberOfPickedRays(void);
+			
+			/**
+			@brief Gets the robot_width of CRSM_SlamParameters
+			@return double The robot width
+			**/
+			double getRobotWidth(void);
+			
+			/**
+			@brief Gets the robot_length of CRSM_SlamParameters
+			@return double The robot length
+			**/
+			double getRobotLength(void);
+			
+			/**
+			@brief Gets the occupancy_grid_publish_topic of CRSM_SlamParameters
+			@return std::string The occupancy grid publishing topic
+			**/
+			std::string getOccupancyGridPublishTopic(void);
+			
+			/**
+			@brief Gets the robot_trajectory_publish_topic of CRSM_SlamParameters
+			@return std::string The trajectory publishing topic
+			**/
+			std::string getRobotTrajectoryPublishTopic(void);
+			
+			/**
+			@brief Gets the trajectory_publisher_frame_id of CRSM_SlamParameters
+			@return std::string The trajectory frame ID
+			**/
+			std::string getTrajectoryPublisherFrameId(void);
+			
+			/**
+			@brief Gets the laser_subscriber_topic of CRSM_SlamParameters
+			@return std::string The laser subscriber topic
+			**/
+			std::string getLaserSubscriberTopic(void);
+			
+			/**
+			@brief Gets the world_frame of CRSM_SlamParameters
+			@return std::string Holds the world frame 
+			**/
+			std::string getWorldFrame(void);
+			
+			/**
+			@brief Gets the base_footprint_frame of CRSM_SlamParameters
+			@return std::string Holds the base footprint frame - (x,y,yaw)
+			**/
+			std::string getBaseFootprintFrame(void);
+			
+			/**
+			@brief Gets the base_frame of CRSM_SlamParameters
+			@return std::string Holds the base frame
+			**/
+			std::string getBaseFrame(void);
+			
+			/**
+			@brief Gets the map_frame of CRSM_SlamParameters
+			@return std::string Holds the map frame
+			**/
+			std::string getMapFrame(void);
+			
+			/**
+			@brief Gets the laser_frame of CRSM_SlamParameters
+			@return std::string Holds the laser frame
+			**/
+			std::string getLaserFrame(void);
 		};
 
 }
