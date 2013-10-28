@@ -17,8 +17,8 @@ laser_frame : laser
 
 hill_climbing_disparity : 40
 slam_container_size : 4096
-slam_occupancy_grid_dimentionality : 0.02
-map_update_density : 40
+slam_occupancy_grid_dimentionality : 0.015
+map_update_density : 30
 map_update_obstacle_density : 3.0
 scan_density_lower_boundary : 0.3
 max_hill_climbing_iterations : 40000

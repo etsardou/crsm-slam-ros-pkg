@@ -1,6 +1,6 @@
 <!--Simulation Mode SLAM Launch -->
 <launch>
-	<node name="crsm_slam_node" type="crsm_slam_node" pkg="pandora_slam" respawn="false" ns="crsm_slam" output="screen"/>
-	<rosparam file="$(find pandora_slam)/config/crsm_slam/crsm_slam_parameters.yaml" command="load" ns="crsm_slam"/>
+	<node name="crsm_slam_node" type="crsm_slam_node" pkg="crsm_slam" respawn="false" ns="crsm_slam" output="screen"/>
+	<rosparam file="$(find crsm_slam)/config/crsm_slam/crsm_slam_parameters.yaml" command="load" ns="crsm_slam"/>
 	<node pkg="tf" type="static_transform_publisher" name="world2map" args="0 0 0 0 0 0  world map 100" />
 </launch>
