@@ -138,7 +138,7 @@ void CrsmSlam::updateParameters(void){
 		n.getParam("/crsm_slam/slam_container_size", slamParams.map_size);
 	else {
 		ROS_WARN("[CrsmSlam] : Parameter slam_container_size not found. Using Default");
-		slamParams.map_size = 50 ;
+		slamParams.map_size = 500 ;
 	}
 	
 	if (n.hasParam("/crsm_slam/slam_occupancy_grid_dimentionality")) 
@@ -152,7 +152,7 @@ void CrsmSlam::updateParameters(void){
 		n.getParam("/crsm_slam/map_update_density", slamParams.density);
 	else {
 		ROS_WARN("[CrsmSlam] : Parameter map_update_density not found. Using Default");
-		slamParams.density = 0.8 ;
+		slamParams.density = 30.0 ;
 	}
 	
 	if (n.hasParam("/crsm_slam/map_update_obstacle_density")) 
@@ -464,33 +464,45 @@ void CrsmSlam::fixNewScans(const sensor_msgs::LaserScanConstPtr& msg){
 			meanDensity=0.5;
 	}
 	updateMapProbabilities();
-	
+
+	expandMap();
 	counter++;
 }
 
 
 bool CrsmSlam::checkExpansion(int x,int y){
+	bool changed=false;
 	if(x<0){
 		expansion.expansions[LEFT]=x+100;
-		return true;
+		changed=true;
 	}
-	if(x>map.info.width){
+	if(x>=map.info.width){
 		expansion.expansions[RIGHT]=x+100;
-		return true;
+		changed=true;
 	}
 	if(y<0){
 		expansion.expansions[UP]=y+100;
-		return true;
+		changed=true;
 	}
-	if(y>map.info.height){
+	if(y>=map.info.height){
 		expansion.expansions[DOWN]=y+100;
-		return true;
+		changed=true;
 	}
-	return false;
+	return changed;
 }
 
 void CrsmSlam::expandMap(void){
-	ROS_ERROR("Expansion ! ");
+	if(	expansion.expansions[LEFT]==0 && 
+		expansion.expansions[RIGHT]==0 &&
+		expansion.expansions[UP]==0 &&
+		expansion.expansions[DOWN]==0 ) return;
+		
+ROS_ERROR("Expand : L-%d, R-%d, U-%d, D-%d, Oxp-%d, Oyp-%d",expansion.expansions[LEFT], 
+		expansion.expansions[RIGHT],
+		expansion.expansions[UP],
+		expansion.expansions[DOWN],
+		map.info.originx,
+		map.info.originy);
 	map.expandMap(expansion);
 	
 	robotPose.x+=expansion.expansions[LEFT];
@@ -535,6 +547,9 @@ void CrsmSlam::updateMapProbabilities(void){
 			float xPoint,yPoint;
 			xPoint=R*cos(robotPose.theta+laser.angles[measid]) + robotPose.x+map.info.originx;
 			yPoint=R*sin(robotPose.theta+laser.angles[measid]) + robotPose.y+map.info.originy;
+			if(checkExpansion(xPoint,yPoint)){
+				break;
+			}
 			int tt=map.p[(unsigned int)xPoint][(unsigned int)yPoint];
 			float diff=fabs(tt-127.0)/128.0;
 			if(dMeasure>R || (xt==0 && yt==0))
@@ -602,8 +617,8 @@ void CrsmSlam::publishOGM(const ros::TimerEvent& e){
     grid.info.width = width;
     grid.info.height = height;
 
-    grid.info.origin.position.x = -map.info.originx*slamParams.ocgd ;
-    grid.info.origin.position.y = -map.info.originy*slamParams.ocgd;
+    grid.info.origin.position.x = -(map.info.originx*slamParams.ocgd);
+    grid.info.origin.position.y = -(map.info.originy*slamParams.ocgd);
     
     grid.data.resize(width*height) ;
     for(int i=0;i<width;i++){
@@ -611,6 +626,8 @@ void CrsmSlam::publishOGM(const ros::TimerEvent& e){
 			grid.data[j*width+i]= 100.0-(int) (map.p[i][j]*100.0/255.0);
 		}
 	}
+ 
+	ROS_ERROR("W,H,Ox,Oy: %d %d %f %f",width,height,grid.info.origin.position.x,grid.info.origin.position.y);
  
     _occupancyGridPublisher.publish(grid);
 }

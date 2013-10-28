@@ -16,7 +16,6 @@ laser_frame : laser
 #~ SLAM parameters
 
 hill_climbing_disparity : 40
-
 slam_container_size : 500
 slam_occupancy_grid_dimentionality : 0.02
 map_update_density : 40
