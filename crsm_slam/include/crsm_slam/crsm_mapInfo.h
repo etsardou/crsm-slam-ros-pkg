@@ -26,18 +26,19 @@ namespace crsm_slam{
 	 @brief Holds the occupancy grid map information
 	 **/ 
 	struct CrsmMapInfo{
-		unsigned int size;	//!< The map container size
-		int xmax;			//!< Map limits : maximum X
-		int xmin;			//!< Map limits : minimum X
-		int ymax;			//!< Map limits : maximum Y
-		int ymin;			//!< Map limits : minimum Y
+
+		unsigned int width;	//!< The map container width
+		unsigned int height;	//!< The map container height
+		
+		unsigned int originx;	//!< The start point of mapping - x coord
+		unsigned int originy;	//!< The start point of mapping - y coord
 		
 		/**
 		@brief Default constructor. Initialises the CrsmMapInfo variables to 0.
 		**/
 		CrsmMapInfo(){
-			size=0;
-			xmax=xmin=ymax=ymin=0;
+			width=height=0;
+			originx=originy=0;
 		}
 	};
 

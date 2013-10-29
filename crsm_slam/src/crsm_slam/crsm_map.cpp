@@ -26,77 +26,59 @@ namespace crsm_slam{
 @param size_ [unsigned int] The map's size in pixels
 **/
 CrsmMap::CrsmMap(unsigned int size_){
-	info.size=size_;
-	p=new unsigned char *[info.size];
-	for(unsigned int i=0;i<info.size;i++)
-		p[i]=new unsigned char [info.size];
+	
+	info.width=size_;
+	info.height=size_;
+	
+	info.originx=size_/2;
+	info.originy=size_/2;
+	
+	p=new unsigned char *[info.width];
+	for(unsigned int i=0;i<info.width;i++)
+		p[i]=new unsigned char [info.height];
 
-	for(unsigned int i=0;i<info.size;i++)
-		for(unsigned int j=0;j<info.size;j++)
+	for(unsigned int i=0;i<info.width;i++)
+		for(unsigned int j=0;j<info.height;j++)
 			p[i][j]=127;
-			
-	info.xmin=0;
-	info.xmax=0;
-	info.ymin=0;
-	info.ymax=0;
 }
 
 /**
-@brief Updates map limits
+@brief Reallocs the map to a specific direction
+@params exp [crsm_slam::CrsmExpansion] The expansion to be made
 @return void
 **/
-void CrsmMap::findEffectiveMapLimits(void){
-	int xmin=info.size/2-100;
-	int xmax=info.size/2+100;
-	int ymin=info.size/2-100;
-	int ymax=info.size/2+100;
-	bool isAllGray=false;
-	while(!isAllGray){
-		isAllGray=true;
-		for(int i=xmin;i<xmax;i++)
-			if(p[i][ymin]!=127){
-				isAllGray=false;
-				break;
-			}
-		if(!isAllGray){
-			ymin-=100;
-			continue;
-		}
-		
-		for(int i=xmin;i<xmax;i++)
-			if(p[i][ymax]!=127){
-				isAllGray=false;
-				break;
-			}
-		if(!isAllGray){
-			ymax+=100;
-			continue;
-		}
-		
-		for(int i=ymin;i<ymax;i++)
-			if(p[xmin][i]!=127){
-				isAllGray=false;
-				break;
-			}
-		if(!isAllGray){
-			xmin-=100;
-			continue;
-		}
+void CrsmMap::expandMap(CrsmExpansion expansion){
+	
+	
+	
+	int newOriginx=info.originx+expansion.expansions[LEFT];
+	int newOriginy=info.originy+expansion.expansions[UP];
+	
+	int newWidth=info.width+expansion.expansions[LEFT]+expansion.expansions[RIGHT];
+	int newHeight=info.height+expansion.expansions[UP]+expansion.expansions[DOWN];
+	
+	unsigned char ** newMap;
+	newMap=new unsigned char *[newWidth];
+	for(unsigned int i=0;i<newWidth;i++)
+		newMap[i]=new unsigned char[newHeight];
+	for(unsigned int i=0;i<newWidth;i++)
+		for(unsigned int j=0;j<newHeight;j++)
+			newMap[i][j]=127;
+	
+	for(unsigned int i=0;i<info.width;i++)
+		for(unsigned int j=0;j<info.height;j++)
+			newMap[i+expansion.expansions[LEFT]][j+expansion.expansions[UP]]=p[i][j];
+			
+	for(unsigned int i=0;i<info.width;i++)
+		delete [] p[i];
+	delete [] p;
 
-		for(int i=ymin;i<ymax;i++)
-			if(p[xmax][i]!=127){
-				isAllGray=false;
-				break;
-			}
-		if(!isAllGray){
-			xmax+=100;
-			continue;
-		}
-	}
-	info.xmin=xmin;
-	info.ymin=ymin;
-	info.xmax=xmax;
-	info.ymax=ymax;
+	p=newMap;
+	info.width=newWidth;
+	info.height=newHeight;
+	
+	info.originx=newOriginx;
+	info.originy=newOriginy;
 }
 
 }
