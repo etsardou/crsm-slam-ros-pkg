@@ -269,8 +269,8 @@ void CrsmSlam::findTransformation(void){
 			costh=cos(temp.dth);
 			tttx=tempx*costh-tempy*sinth+temp.dx+map.info.originx;
 			ttty=tempx*sinth+tempy*costh+temp.dy+map.info.originy;	
-			
-			if(checkExpansion(tttx,ttty)) continue;
+		
+			if(checkExpansion(tttx,ttty,false)) continue;
 							
 			if(map.p[(unsigned int)tttx][(unsigned int)ttty]==127) continue;
 			tempFitness+=((255-map.p[(unsigned int)tttx][(unsigned int)ttty])*10+
@@ -295,7 +295,7 @@ void CrsmSlam::findTransformation(void){
 		}
 		if(counter>slamParams.max_hill_climbing_iterations) break;
 		counter++;
-	}	
+	}
 }
 
 /**
@@ -399,11 +399,6 @@ void CrsmSlam::calculateCriticalRays(void){
 void CrsmSlam::fixNewScans(const sensor_msgs::LaserScanConstPtr& msg){
 	if(!laser.initialized)
 		laser.initialize(msg);
-
-	expansion.expansions[RIGHT]=0;
-	expansion.expansions[LEFT]=0;
-	expansion.expansions[UP]=0;
-	expansion.expansions[DOWN]=0;
 	
 	static int raysPicked=0;
 	static float meanFitness=0;
@@ -464,28 +459,38 @@ void CrsmSlam::fixNewScans(const sensor_msgs::LaserScanConstPtr& msg){
 			meanDensity=0.5;
 	}
 	updateMapProbabilities();
-
-	expandMap();
 	counter++;
 }
 
 
-bool CrsmSlam::checkExpansion(int x,int y){
+bool CrsmSlam::checkExpansion(int x,int y,bool update){
 	bool changed=false;
 	if(x<0){
-		expansion.expansions[LEFT]=x+100;
+		if(update && (abs(x))>expansion.expansions[LEFT]){
+			expansion.expansions[LEFT]=abs(x)+50;
+			ROS_INFO("x %d",x);
+		}
 		changed=true;
 	}
-	if(x>=map.info.width){
-		expansion.expansions[RIGHT]=x+100;
+	if(x>=(int)map.info.width){
+		if(update && (abs(x-map.info.width))>expansion.expansions[RIGHT]){
+			expansion.expansions[RIGHT]=abs(x-map.info.width)+50;
+			ROS_INFO("x %d",x);
+		}
 		changed=true;
 	}
 	if(y<0){
-		expansion.expansions[UP]=y+100;
+		if(update && (abs(y))>expansion.expansions[UP]){
+			expansion.expansions[UP]=abs(y)+50;
+			ROS_INFO("y %d",y);
+		}
 		changed=true;
 	}
-	if(y>=map.info.height){
-		expansion.expansions[DOWN]=y+100;
+	if(y>=(int)map.info.height){
+		if(update && (abs(y-map.info.height))>expansion.expansions[DOWN]){
+			expansion.expansions[DOWN]=abs(y-map.info.height)+50;
+			ROS_INFO("y %d",y);
+		}
 		changed=true;
 	}
 	return changed;
@@ -497,20 +502,34 @@ void CrsmSlam::expandMap(void){
 		expansion.expansions[UP]==0 &&
 		expansion.expansions[DOWN]==0 ) return;
 		
-ROS_ERROR("Expand : L-%d, R-%d, U-%d, D-%d, Oxp-%d, Oyp-%d",expansion.expansions[LEFT], 
+ROS_ERROR("Expand before: L-%d, R-%d, U-%d, D-%d, Oxp-%d, Oyp-%d, rpx %f, rpy %f",
+		expansion.expansions[LEFT], 
 		expansion.expansions[RIGHT],
 		expansion.expansions[UP],
 		expansion.expansions[DOWN],
 		map.info.originx,
-		map.info.originy);
+		map.info.originy,
+		robotPose.x,
+		robotPose.y);
+		
 	map.expandMap(expansion);
-	
+
 	robotPose.x+=expansion.expansions[LEFT];
 	robotPose.y+=expansion.expansions[UP];
 	
 	for (int i=0; i<robotTrajectory.size();i++){
 		robotTrajectory[i].x+=expansion.expansions[LEFT];
 		robotTrajectory[i].y+=expansion.expansions[UP];
+	}
+	
+	ROS_ERROR("Expand after: Oxp-%d, Oyp-%d, rpx %f, rpy %f",
+		map.info.originx,
+		map.info.originy,
+		robotPose.x,
+		robotPose.y);
+	
+	for (int i=0; i<robotTrajectory.size();i++){
+		cout<<robotTrajectory[i].x<<"=="<<robotTrajectory[i].y<<"\n";
 	}
 }
 
@@ -526,6 +545,17 @@ void CrsmSlam::updateMapProbabilities(void){
 	if(meanDensity<0.05) meanDensity=0.05;
 	std::set<long> prevPoints;
 	
+	expansion.expansions[RIGHT]=0;
+	expansion.expansions[LEFT]=0;
+	expansion.expansions[UP]=0;
+	expansion.expansions[DOWN]=0;
+	
+	checkExpansion(	robotPose.x+map.info.originx-laser.info.laserMax/slamParams.ocgd,
+					robotPose.y+map.info.originy-laser.info.laserMax/slamParams.ocgd,true);
+	checkExpansion(	robotPose.x+map.info.originx+laser.info.laserMax/slamParams.ocgd,
+					robotPose.y+map.info.originy+laser.info.laserMax/slamParams.ocgd,true);
+	expandMap();
+	
 	//	Fix map size according to the laser scans
 	for(unsigned int i=0;i<laser.info.laserRays;i++){
 			float xPoint,yPoint;
@@ -533,23 +563,24 @@ void CrsmSlam::updateMapProbabilities(void){
 			yPoint=laser.scan.distance[i]/slamParams.ocgd*sin(robotPose.theta+(float)i/(float)laser.info.laserRays*laser.info.laserAngle+laser.info.laserAngleBegin) + robotPose.y+map.info.originy;
 	}
 	
+	ROS_INFO("Map updating");
+	
 	//	Set the map's colorization
 	for(unsigned int measid=0;measid<laser.info.laserRays;measid+=1){
-		int xt,yt;
+		int xt,yt,xtt,ytt;
 		if(laser.scan.distance[measid]==0) continue;
 		xt=laser.scan.p[measid].x;
 		yt=laser.scan.p[measid].y;
 		
 		if(prevPoints.find(xt*map.info.width+yt)!=prevPoints.end()) continue;
 		prevPoints.insert(xt*map.info.width+yt);
+
 		dMeasure=(int)((float)laser.scan.distance[measid]/slamParams.ocgd);
 		while(R<laser.info.laserMax/slamParams.ocgd-3){
 			float xPoint,yPoint;
 			xPoint=R*cos(robotPose.theta+laser.angles[measid]) + robotPose.x+map.info.originx;
 			yPoint=R*sin(robotPose.theta+laser.angles[measid]) + robotPose.y+map.info.originy;
-			if(checkExpansion(xPoint,yPoint)){
-				break;
-			}
+			if(checkExpansion((int)xPoint,(int)yPoint,false)) break;
 			int tt=map.p[(unsigned int)xPoint][(unsigned int)yPoint];
 			float diff=fabs(tt-127.0)/128.0;
 			if(dMeasure>R || (xt==0 && yt==0))
@@ -604,7 +635,7 @@ void CrsmSlam::stopOGMPublisher(void){
 @return void
 **/
 void CrsmSlam::publishOGM(const ros::TimerEvent& e){
-
+	ROS_INFO("Sending map....");
 	int width=map.info.width;
     int height=map.info.height;
     

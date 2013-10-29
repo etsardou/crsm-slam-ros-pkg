@@ -67,7 +67,7 @@ void CrsmMap::expandMap(CrsmExpansion expansion){
 	
 	for(unsigned int i=0;i<info.width;i++)
 		for(unsigned int j=0;j<info.height;j++)
-			newMap[i+newOriginx-info.originx][j+newOriginy-info.originy]=p[i][j];
+			newMap[i+expansion.expansions[LEFT]][j+expansion.expansions[UP]]=p[i][j];
 			
 	for(unsigned int i=0;i<info.width;i++)
 		delete [] p[i];
@@ -76,6 +76,7 @@ void CrsmMap::expandMap(CrsmExpansion expansion){
 	p=newMap;
 	info.width=newWidth;
 	info.height=newHeight;
+	
 	info.originx=newOriginx;
 	info.originy=newOriginy;
 }
