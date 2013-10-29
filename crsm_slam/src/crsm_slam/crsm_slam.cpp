@@ -448,7 +448,10 @@ void CrsmSlam::fixNewScans(const sensor_msgs::LaserScanConstPtr& msg){
 
 	//---robot trajectory---
 	CrsmPose trajectoryTemp;
-	if ( robotTrajectory.size()==0 || robotTrajectory[robotTrajectory.size()-1].x != robotPose.x || robotTrajectory[robotTrajectory.size()-1].y != robotPose.y){
+	if ( 	robotTrajectory.size()==0 || 
+			robotTrajectory[robotTrajectory.size()-1].x != (robotPose.x-cos(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd) || 
+			robotTrajectory[robotTrajectory.size()-1].y != (robotPose.y-sin(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd)){
+				
 		trajectoryTemp.x = robotPose.x-cos(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd;
 		trajectoryTemp.y = robotPose.y-sin(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd;
 		trajectoryTemp.theta = robotPose.theta;
@@ -501,36 +504,8 @@ void CrsmSlam::expandMap(void){
 		expansion.expansions[RIGHT]==0 &&
 		expansion.expansions[UP]==0 &&
 		expansion.expansions[DOWN]==0 ) return;
-		
-ROS_ERROR("Expand before: L-%d, R-%d, U-%d, D-%d, Oxp-%d, Oyp-%d, rpx %f, rpy %f",
-		expansion.expansions[LEFT], 
-		expansion.expansions[RIGHT],
-		expansion.expansions[UP],
-		expansion.expansions[DOWN],
-		map.info.originx,
-		map.info.originy,
-		robotPose.x,
-		robotPose.y);
-		
-	map.expandMap(expansion);
 
-	robotPose.x+=expansion.expansions[LEFT];
-	robotPose.y+=expansion.expansions[UP];
-	
-	for (int i=0; i<robotTrajectory.size();i++){
-		robotTrajectory[i].x+=expansion.expansions[LEFT];
-		robotTrajectory[i].y+=expansion.expansions[UP];
-	}
-	
-	ROS_ERROR("Expand after: Oxp-%d, Oyp-%d, rpx %f, rpy %f",
-		map.info.originx,
-		map.info.originy,
-		robotPose.x,
-		robotPose.y);
-	
-	for (int i=0; i<robotTrajectory.size();i++){
-		cout<<robotTrajectory[i].x<<"=="<<robotTrajectory[i].y<<"\n";
-	}
+	map.expandMap(expansion);
 }
 
 
@@ -562,9 +537,7 @@ void CrsmSlam::updateMapProbabilities(void){
 			xPoint=laser.scan.distance[i]/slamParams.ocgd*cos(robotPose.theta+(float)i/(float)laser.info.laserRays*laser.info.laserAngle+laser.info.laserAngleBegin) + robotPose.x+map.info.originx;
 			yPoint=laser.scan.distance[i]/slamParams.ocgd*sin(robotPose.theta+(float)i/(float)laser.info.laserRays*laser.info.laserAngle+laser.info.laserAngleBegin) + robotPose.y+map.info.originy;
 	}
-	
-	ROS_INFO("Map updating");
-	
+
 	//	Set the map's colorization
 	for(unsigned int measid=0;measid<laser.info.laserRays;measid+=1){
 		int xt,yt,xtt,ytt;
@@ -635,7 +608,6 @@ void CrsmSlam::stopOGMPublisher(void){
 @return void
 **/
 void CrsmSlam::publishOGM(const ros::TimerEvent& e){
-	ROS_INFO("Sending map....");
 	int width=map.info.width;
     int height=map.info.height;
     
@@ -657,9 +629,6 @@ void CrsmSlam::publishOGM(const ros::TimerEvent& e){
 			grid.data[j*width+i]= 100.0-(int) (map.p[i][j]*100.0/255.0);
 		}
 	}
- 
-	ROS_ERROR("W,H,Ox,Oy: %d %d %f %f",width,height,grid.info.origin.position.x,grid.info.origin.position.y);
- 
     _occupancyGridPublisher.publish(grid);
 }
 
