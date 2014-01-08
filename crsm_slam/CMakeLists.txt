@@ -1,35 +1,28 @@
-# http://ros.org/doc/groovy/api/catkin/html/user_guide/supposed.html
 cmake_minimum_required(VERSION 2.8.3)
 project(crsm_slam)
-# Load catkin and all dependencies required for this package
-find_package(catkin REQUIRED COMPONENTS roscpp 
-                                tf 
-)
 
-# TODO: fill in what other packages will need to use this package
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
+find_package(catkin REQUIRED COMPONENTS 
+			      roscpp 
+                              tf
+			      nav_msgs
+			      geometry_msgs
+	    )
+
+
 catkin_package(
-    DEPENDS   
-    CATKIN-DEPENDS # TODO
-    INCLUDE_DIRS # TODO include
-    LIBRARIES # TODO
+    CATKIN_DEPENDS
+      roscpp 
+      tf
+      nav_msgs
+      geometry_msgs
+    INCLUDE_DIRS include
 )
 
 include_directories(include
   ${catkin_INCLUDE_DIRS} 
 )
 
-
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(CMAKE_BUILD_TYPE Debug)
-
+# set(CMAKE_BUILD_TYPE Debug)
 
 ############### crsm_laser ###############
 add_library(crsm_laser src/crsm_slam/crsm_laser.cpp)
@@ -41,13 +34,21 @@ target_link_libraries(crsm_map ${catkin_LIBRARIES} )
 
 ################ crsm_slam ################
 add_library(crsm_slam src/crsm_slam/crsm_slam.cpp)
-target_link_libraries(crsm_slam ${catkin_LIBRARIES}
-						crsm_laser
-						crsm_map
+target_link_libraries(crsm_slam 
+		      ${catkin_LIBRARIES}
+		      crsm_laser
+		      crsm_map
 )
 
 ############## crsm_slam_node ##############
 add_executable(crsm_slam_node  src/crsm_slam/crsm_slam_node.cpp)
-target_link_libraries(crsm_slam_node ${catkin_LIBRARIES} 
-						crsm_slam
+target_link_libraries(crsm_slam_node 
+		      ${catkin_LIBRARIES}
+		      crsm_slam
 )
+
+# Install launch files
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
+
