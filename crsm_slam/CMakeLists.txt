@@ -18,6 +18,10 @@ catkin_package(
       geometry_msgs
       sensor_msgs
     INCLUDE_DIRS include
+    LIBRARIES
+      crsm_laser
+      crsm_map
+      crsm_slam
 )
 
 include_directories(include
