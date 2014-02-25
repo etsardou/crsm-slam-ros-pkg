@@ -2,8 +2,8 @@
 Changelog for package crsm_slam
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.2 (2014-02-26)
+------------------
 * fix cmake to export shared libraries
 
 1.0.1 (2014-01-19)
