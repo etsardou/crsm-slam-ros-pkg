@@ -408,10 +408,9 @@ void CrsmSlam::fixNewScans(const sensor_msgs::LaserScanConstPtr& msg){
 		laser.scan.distance[j]=msg->ranges[j];
 		laserMean+=laser.scan.distance[j];
 		
-		if(fabs(laser.scan.distance[j])>laser.info.laserMax)
-			laser.scan.distance[j]=0;
-		if(msg->ranges[j]<0)
-			laser.scan.distance[j]=0;
+    //!< Check if laser measurement is in nominal values
+    if( ! (laser.scan.distance[j] >= 0.1 && laser.scan.distance[j] <= laser.info.laserMax))
+      laser.scan.distance[j]=0;
 		
 		laser.scan.p[j].theta= msg->angle_min + ( j*msg->angle_increment );
 		laser.scan.p[j].x=laser.scan.distance[j]/slamParams.ocgd*cos(laser.scan.p[j].theta);
