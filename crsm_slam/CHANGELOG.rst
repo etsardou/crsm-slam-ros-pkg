@@ -2,6 +2,10 @@
 Changelog for package crsm_slam
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Compliance with ROS REP 117
+
 1.0.2 (2014-02-26)
 ------------------
 * fix cmake to export shared libraries
