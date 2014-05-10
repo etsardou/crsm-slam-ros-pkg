@@ -2,8 +2,8 @@
 Changelog for package crsm_slam
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.3 (2014-05-11)
+------------------
 * Compliance with ROS REP 117
 
 1.0.2 (2014-02-26)

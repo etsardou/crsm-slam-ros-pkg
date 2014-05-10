@@ -1,6 +1,6 @@
 <package>
 	<name>crsm_slam</name>
-	<version>1.0.2</version>
+	<version>1.0.3</version>
 	<description>ROS package for the CRSM SLAM (Critical Rays Scan Match Simultaneous Localization And Mapping)</description>
 	<maintainer email="etsardou@gmail.com">Manos Tsardoulias</maintainer> 
 	
