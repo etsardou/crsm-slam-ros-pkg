@@ -430,15 +430,7 @@ namespace crsm_slam{
         laser.scan.distance[j] = 0; // erroneous measurement
       }
 
-//      if(laser.scan.distance[j] <= 0.1)
-//        laser.scan.distance[j]=0;
-//      if(laser.scan.distance[j] > laser.info.laserMax)
-//        laser.scan.distance[j]=0;
-      
       laserMean+=laser.scan.distance[j];
-
-//      if(! (laser.scan.distance[j] >= 0.1 && laser.scan.distance[j] <= laser.info.laserMax) )
-//        laser.scan.distance[j] = 0;
 
       laser.scan.p[j].theta= msg->angle_min + ( j*msg->angle_increment );
       laser.scan.p[j].x=laser.scan.distance[j]/slamParams.ocgd*cos(laser.scan.p[j].theta);
@@ -582,13 +574,15 @@ namespace crsm_slam{
         yPoint=R*sin(robotPose.theta+laser.angles[measid]) + robotPose.y+map.info.originy;
         if(checkExpansion((int)xPoint,(int)yPoint,false)) break;
         int tt=map.p[(unsigned int)xPoint][(unsigned int)yPoint];
+        float oldtt = map.p[(unsigned int)xPoint][(unsigned int)yPoint];
+        
         float diff=fabs(tt-127.0)/128.0;
         if(dMeasure>R || (xt==0 && yt==0))
           tt+=(1-diff)*meanDensity*slamParams.density;
         if( dMeasure+1>R && dMeasure-2<R )
           tt-=(1-diff)*meanDensity*slamParams.obstacle_density*slamParams.density;
         map.p[(unsigned int)xPoint][(unsigned int)yPoint]=tt;
-        if(map.p[(unsigned int)xPoint][(unsigned int)yPoint] < 100) break;
+        if( oldtt < 100) break;
         R++;
       }
       R=1;
