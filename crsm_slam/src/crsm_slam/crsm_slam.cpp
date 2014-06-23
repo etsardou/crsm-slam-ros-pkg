@@ -467,8 +467,8 @@ namespace crsm_slam{
 
     //---robot trajectory---
     CrsmPose trajectoryTemp;
-    if ( 	robotTrajectory.size()==0 || 
-      robotTrajectory[robotTrajectory.size()-1].x != (robotPose.x-cos(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd) || 
+    if ( 	robotTrajectory.size()==0 ||
+      robotTrajectory[robotTrajectory.size()-1].x != (robotPose.x-cos(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd) ||
       robotTrajectory[robotTrajectory.size()-1].y != (robotPose.y-sin(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd)){
 
       trajectoryTemp.x = robotPose.x-cos(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd;
@@ -536,7 +536,7 @@ namespace crsm_slam{
     int R=0;
     int dMeasure;
     if(meanDensity>0.2) meanDensity=0.2;
-    if(meanDensity<0.05) meanDensity=0.05;
+    if(meanDensity<0.04) meanDensity=0.04;
     std::set<long> prevPoints;
 
     expansion.expansions[RIGHT]=0;
@@ -567,6 +567,8 @@ namespace crsm_slam{
       if(prevPoints.find(xt*map.info.width+yt)!=prevPoints.end()) continue;
       prevPoints.insert(xt*map.info.width+yt);
 
+      float prevtt = map.p[static_cast<int>(robotPose.x+map.info.originx)][static_cast<int>(robotPose.y+map.info.originy)];
+
       dMeasure=(int)((float)laser.scan.distance[measid]/slamParams.ocgd);
       while(R<laser.info.laserMax/slamParams.ocgd-3){
         float xPoint,yPoint;
@@ -574,15 +576,22 @@ namespace crsm_slam{
         yPoint=R*sin(robotPose.theta+laser.angles[measid]) + robotPose.y+map.info.originy;
         if(checkExpansion((int)xPoint,(int)yPoint,false)) break;
         int tt=map.p[(unsigned int)xPoint][(unsigned int)yPoint];
+
         float oldtt = map.p[(unsigned int)xPoint][(unsigned int)yPoint];
         
         float diff=fabs(tt-127.0)/128.0;
+        diff = pow(diff, 0.5);
+
         if(dMeasure>R || (xt==0 && yt==0))
           tt+=(1-diff)*meanDensity*slamParams.density;
         if( dMeasure+1>R && dMeasure-2<R )
           tt-=(1-diff)*meanDensity*slamParams.obstacle_density*slamParams.density;
+
         map.p[(unsigned int)xPoint][(unsigned int)yPoint]=tt;
-        if( oldtt < 100) break;
+        
+        if( oldtt < 100 && prevtt < 100 ) break;
+
+        prevtt = oldtt;
         R++;
       }
       R=1;
@@ -648,7 +657,13 @@ namespace crsm_slam{
     grid.data.resize(width*height) ;
     for(int i=0;i<width;i++){
       for(int j=0;j<height;j++){
-        grid.data[j*width+i]= 100.0-(int) (map.p[i][j]*100.0/255.0);
+        if(map.p[i][j] > 128)
+          grid.data[j*width+i] = 0;
+        else if (map.p[i][j] < 126)
+          grid.data[j*width+i] = 100;
+        else
+          grid.data[j*width+i] = 51;
+//        grid.data[j*width+i]= 100.0-(int) (map.p[i][j]*100.0/255.0);
       }
     }
     _occupancyGridPublisher.publish(grid);
