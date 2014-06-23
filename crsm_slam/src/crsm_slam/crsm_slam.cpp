@@ -588,6 +588,7 @@ namespace crsm_slam{
         if( dMeasure+1>R && dMeasure-2<R )
           tt-=(1-diff)*meanDensity*slamParams.obstacle_density*slamParams.density;
         map.p[(unsigned int)xPoint][(unsigned int)yPoint]=tt;
+        if(map.p[(unsigned int)xPoint][(unsigned int)yPoint] < 100) break;
         R++;
       }
       R=1;
