@@ -419,7 +419,7 @@ namespace crsm_slam{
       }
       else if ( !isfinite(laser.scan.distance[j]) &&  laser.scan.distance[j] > 0 )
       {
-        laser.scan.distance[j] = laser.info.laserMax; // too far to measure
+        laser.scan.distance[j] = 0;//laser.info.laserMax; // too far to measure
       }
       else if ( isnan(laser.scan.distance[j]) )
       {
@@ -589,7 +589,7 @@ namespace crsm_slam{
 
         map.p[(unsigned int)xPoint][(unsigned int)yPoint]=tt;
         
-        if( oldtt < 100 && prevtt < 100 ) break;
+        //if( oldtt < 100 && prevtt < 100 ) break;
 
         prevtt = oldtt;
         R++;
