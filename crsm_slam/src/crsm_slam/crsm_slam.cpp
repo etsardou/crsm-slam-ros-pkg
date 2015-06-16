@@ -472,23 +472,13 @@ namespace crsm_slam{
       robotPose.theta=-(laser.info.laserAngleBegin+laser.info.laserAngleEnd)/2.0;
     }
 
-    //---robot trajectory---
-    CrsmPose trajectoryTemp;
-
-    trajectoryTemp.x = robotPose.x-cos(robotPose.theta) * 
-      slamParams.dx_laser_robotCenter/slamParams.ocgd;
-    trajectoryTemp.y = robotPose.y-sin(robotPose.theta) * 
-      slamParams.dx_laser_robotCenter/slamParams.ocgd;
-    
-    trajectoryTemp.theta = robotPose.theta;
-    robotTrajectory.push_back( trajectoryTemp );
-
     if(counter<10){
       meanDensity=0.5;
     }
     updateMapProbabilities();
     
     publishOGM(msg->header.stamp);
+    // Publish tf before trajectory in order to update it
     publishRobotPoseTf(msg->header.stamp);
     publishTrajectory(msg->header.stamp);
     counter++;
@@ -727,13 +717,36 @@ namespace crsm_slam{
     @return void
    **/
   void CrsmSlam::publishRobotPoseTf(ros::Time timestamp){
-    tf::Vector3 translation( (robotPose.x-cos(robotPose.theta)*(slamParams.dx_laser_robotCenter/slamParams.ocgd))* slamParams.ocgd, (robotPose.y-sin(robotPose.theta)*(slamParams.dx_laser_robotCenter/slamParams.ocgd))* slamParams.ocgd, 0);
+    double rx = (robotPose.x - cos(robotPose.theta) * 
+       (slamParams.dx_laser_robotCenter/slamParams.ocgd)) * slamParams.ocgd;
+    double ry = (robotPose.y-sin(robotPose.theta) * 
+       (slamParams.dx_laser_robotCenter/slamParams.ocgd)) * slamParams.ocgd;
+    double rth = robotPose.theta;
+
+    tf::Vector3 translation(rx, ry, 0);
     tf::Quaternion rotation;
-    rotation.setRPY(0,0,robotPose.theta);
+    rotation.setRPY(0, 0, rth);
 
     tf::Transform transform(rotation,translation);
-    _slamFrameBroadcaster.sendTransform(tf::StampedTransform(transform, timestamp,
-        slamParams.map_frame, slamParams.base_footprint_frame));				
+    _slamFrameBroadcaster.sendTransform(
+      tf::StampedTransform(
+        transform, 
+        timestamp,
+        slamParams.map_frame, 
+        slamParams.base_footprint_frame
+      )
+    );	
+
+    // Update trajectory
+    geometry_msgs::PoseStamped pathPoint;
+    pathPoint.pose.position.x = rx; 
+    pathPoint.pose.position.y = ry; 
+    tf::Quaternion q;
+    q.setRPY(0, 0, rth);
+    geometry_msgs::Quaternion gq;
+    tf::quaternionTFToMsg(q, gq);
+    pathPoint.pose.orientation = gq;
+    trajectory.poses.push_back(pathPoint);
   }
 
   /**
@@ -760,19 +773,9 @@ namespace crsm_slam{
     @return void
    **/
   void CrsmSlam::publishTrajectory(ros::Time timestamp){
-    nav_msgs::Path pathForViz;
-    geometry_msgs::PoseStamped pathPoint;
-
-    for (int i=0; i<robotTrajectory.size();i++){
-      pathPoint.pose.position.x = robotTrajectory[i].x*slamParams.ocgd;
-      pathPoint.pose.position.y = robotTrajectory[i].y*slamParams.ocgd;
-      pathForViz.poses.push_back(pathPoint);
-    }
-
-    pathForViz.header.stamp = timestamp;
-    pathForViz.header.frame_id = slamParams.trajectory_publisher_frame_id;
-
-    _pathPublisher.publish(pathForViz);
+    trajectory.header.stamp = timestamp;
+    trajectory.header.frame_id = slamParams.trajectory_publisher_frame_id;
+    _pathPublisher.publish(trajectory);
   }
 
   //---------------------- Setters for slamParameters ----------------------------//

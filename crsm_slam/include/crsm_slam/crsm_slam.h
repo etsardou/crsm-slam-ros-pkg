@@ -92,6 +92,8 @@ namespace crsm_slam{
       ros::Timer _robotPosePublishingTimer;	//!< The robot pose publishing timer
       ros::Timer _mapPublishingTimer;			//!< The map publishing timer
 
+      nav_msgs::Path trajectory;
+
     public:
 
       ros::NodeHandle n;	//!< The ROS node handle
