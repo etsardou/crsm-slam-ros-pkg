@@ -43,14 +43,21 @@ namespace crsm_slam{
     int initialPatchLength=slamParams.robot_length/slamParams.ocgd/2;
     for(int i=-initialPatchLength;i<initialPatchLength;i++)
       for(int j=-initialPatchWidth;j<initialPatchWidth;j++)
-        map.p[i+map.info.originx-(int)(slamParams.dx_laser_robotCenter/slamParams.ocgd)][j+map.info.originy]=200;
+        map.p[i+map.info.originx-(int)(slamParams.dx_laser_robotCenter/slamParams.ocgd)]
+          [j+map.info.originy]=200;
 
-    _pathPublishingTimer = n.createTimer(ros::Duration(1.0/slamParams.trajectory_freq),&CrsmSlam::publishTrajectory,this,false,false);
+    //_pathPublishingTimer = 
+    //n.createTimer(ros::Duration(1.0/slamParams.trajectory_freq),
+    //&CrsmSlam::publishTrajectory,this,false,false);
 
-    _robotPosePublishingTimer = n.createTimer(ros::Duration(1.0/slamParams.robot_pose_tf_freq),&CrsmSlam::publishRobotPoseTf,this,false,false);
-    _robotPosePublishingTimer.start();
+    //_robotPosePublishingTimer = 
+    //n.createTimer(ros::Duration(1.0/slamParams.robot_pose_tf_freq),
+    //&CrsmSlam::publishRobotPoseTf,this,false,false);
+    //_robotPosePublishingTimer.start();
 
-    _mapPublishingTimer = n.createTimer(ros::Duration(1.0/slamParams.occupancy_grid_map_freq),&CrsmSlam::publishOGM,this,false,false);
+    //_mapPublishingTimer = 
+    //n.createTimer(ros::Duration(1.0/slamParams.occupancy_grid_map_freq),
+    //&CrsmSlam::publishOGM,this,false,false);
 
     expansion.expansions.insert(std::pair<CrsmDirection,int>(RIGHT,0));
     expansion.expansions.insert(std::pair<CrsmDirection,int>(LEFT,0));
@@ -467,20 +474,23 @@ namespace crsm_slam{
 
     //---robot trajectory---
     CrsmPose trajectoryTemp;
-    if ( 	robotTrajectory.size()==0 ||
-      robotTrajectory[robotTrajectory.size()-1].x != (robotPose.x-cos(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd) ||
-      robotTrajectory[robotTrajectory.size()-1].y != (robotPose.y-sin(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd)){
 
-      trajectoryTemp.x = robotPose.x-cos(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd;
-      trajectoryTemp.y = robotPose.y-sin(robotPose.theta)*slamParams.dx_laser_robotCenter/slamParams.ocgd;
-      trajectoryTemp.theta = robotPose.theta;
-      robotTrajectory.push_back( trajectoryTemp );
-    }
+    trajectoryTemp.x = robotPose.x-cos(robotPose.theta) * 
+      slamParams.dx_laser_robotCenter/slamParams.ocgd;
+    trajectoryTemp.y = robotPose.y-sin(robotPose.theta) * 
+      slamParams.dx_laser_robotCenter/slamParams.ocgd;
+    
+    trajectoryTemp.theta = robotPose.theta;
+    robotTrajectory.push_back( trajectoryTemp );
 
     if(counter<10){
       meanDensity=0.5;
     }
     updateMapProbabilities();
+    
+    publishOGM(msg->header.stamp);
+    publishRobotPoseTf(msg->header.stamp);
+    publishTrajectory(msg->header.stamp);
     counter++;
   }
 
@@ -638,13 +648,13 @@ namespace crsm_slam{
     @param e [const ros::TimerEvent&] The timer event
     @return void
    **/
-  void CrsmSlam::publishOGM(const ros::TimerEvent& e){
+  void CrsmSlam::publishOGM(ros::Time timestamp){
     int width=map.info.width;
     int height=map.info.height;
 
     nav_msgs::OccupancyGrid grid;
 
-    grid.header.stamp = ros::Time::now(); 
+    grid.header.stamp = timestamp; 
     grid.header.frame_id = slamParams.map_frame; 
 
     grid.info.resolution = slamParams.ocgd;
@@ -716,13 +726,13 @@ namespace crsm_slam{
     @param e [const ros::TimerEvent&] The timer event
     @return void
    **/
-  void CrsmSlam::publishRobotPoseTf(const ros::TimerEvent& e){
+  void CrsmSlam::publishRobotPoseTf(ros::Time timestamp){
     tf::Vector3 translation( (robotPose.x-cos(robotPose.theta)*(slamParams.dx_laser_robotCenter/slamParams.ocgd))* slamParams.ocgd, (robotPose.y-sin(robotPose.theta)*(slamParams.dx_laser_robotCenter/slamParams.ocgd))* slamParams.ocgd, 0);
     tf::Quaternion rotation;
     rotation.setRPY(0,0,robotPose.theta);
 
     tf::Transform transform(rotation,translation);
-    _slamFrameBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(),
+    _slamFrameBroadcaster.sendTransform(tf::StampedTransform(transform, timestamp,
         slamParams.map_frame, slamParams.base_footprint_frame));				
   }
 
@@ -749,7 +759,7 @@ namespace crsm_slam{
     @param e [const ros::TimerEvent&] The timer event
     @return void
    **/
-  void CrsmSlam::publishTrajectory(const ros::TimerEvent& e){
+  void CrsmSlam::publishTrajectory(ros::Time timestamp){
     nav_msgs::Path pathForViz;
     geometry_msgs::PoseStamped pathPoint;
 
@@ -759,7 +769,7 @@ namespace crsm_slam{
       pathForViz.poses.push_back(pathPoint);
     }
 
-    pathForViz.header.stamp = ros::Time::now();
+    pathForViz.header.stamp = timestamp;
     pathForViz.header.frame_id = slamParams.trajectory_publisher_frame_id;
 
     _pathPublisher.publish(pathForViz);
