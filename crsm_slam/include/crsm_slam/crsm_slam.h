@@ -84,7 +84,7 @@ namespace crsm_slam{
        **/
       void updateParameters(void);
 
-      bool checkExpansion(int x,int y,bool update);
+      bool checkExpansion(float x,float y,bool update);
 
       void expandMap(void);
 

@@ -22,6 +22,7 @@
 
 #include "crsm_mapInfo.h"
 #include <map>
+#include <iostream>
 
 namespace crsm_slam{
 	
@@ -33,7 +34,7 @@ namespace crsm_slam{
 	};
 
 	struct CrsmExpansion{
-		std::map<CrsmDirection,int> expansions;
+		std::map<CrsmDirection,long int> expansions;
 	};
 	
 	/**

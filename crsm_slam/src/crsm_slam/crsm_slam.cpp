@@ -276,15 +276,20 @@ namespace crsm_slam{
         costh=cos(temp.dth);
         tttx=tempx*costh-tempy*sinth+temp.dx+map.info.originx;
         ttty=tempx*sinth+tempy*costh+temp.dy+map.info.originy;	
-
-        if(checkExpansion(tttx,ttty,false)) continue;
-
+        if(checkExpansion( 
+            (unsigned int)(tttx - 1), (unsigned int)(ttty - 1), false)) 
+          continue;
+        if(checkExpansion( 
+            (unsigned int)(tttx + 1), (unsigned int)(ttty + 1), false)) 
+          continue;
+        
         if(map.p[(unsigned int)tttx][(unsigned int)ttty]==127) continue;
         tempFitness+=((255-map.p[(unsigned int)tttx][(unsigned int)ttty])*10+
           (255-map.p[(unsigned int)tttx-1][(unsigned int)ttty])+
           (255-map.p[(unsigned int)tttx+1][(unsigned int)ttty])+
           (255-map.p[(unsigned int)tttx][(unsigned int)ttty-1])+
           (255-map.p[(unsigned int)tttx][(unsigned int)ttty+1]))/255.0;
+
       }
       tempFitness/=(14.0*scanSelections.size());
       trier.fitness=tempFitness;
@@ -406,7 +411,7 @@ namespace crsm_slam{
   void CrsmSlam::fixNewScans(const sensor_msgs::LaserScanConstPtr& msg){
     if(!laser.initialized)
       laser.initialize(msg);
-
+    
     static int raysPicked=0;
     static float meanFitness=0;
     static int counter=0;
@@ -443,7 +448,7 @@ namespace crsm_slam{
       laser.scan.p[j].x=laser.scan.distance[j]/slamParams.ocgd*cos(laser.scan.p[j].theta);
       laser.scan.p[j].y=laser.scan.distance[j]/slamParams.ocgd*sin(laser.scan.p[j].theta);
     }
-
+    //ROS_ERROR("1");
     calculateCriticalRays();
 
     std::vector< set<int>::iterator > toBeErased;
@@ -455,7 +460,8 @@ namespace crsm_slam{
     }
 
     raysPicked+=scanSelections.size();
-
+    
+    //ROS_ERROR("2");
     findTransformation();
 
     meanFitness+=bestFitness;
@@ -475,43 +481,48 @@ namespace crsm_slam{
     if(counter<10){
       meanDensity=0.5;
     }
+
+    //ROS_ERROR("3");
     updateMapProbabilities();
     
+    //ROS_ERROR("4");
     publishOGM(msg->header.stamp);
+
+    //ROS_ERROR("5");
     // Publish tf before trajectory in order to update it
     publishRobotPoseTf(msg->header.stamp);
     publishTrajectory(msg->header.stamp);
+
     counter++;
   }
 
 
-  bool CrsmSlam::checkExpansion(int x,int y,bool update){
+  bool CrsmSlam::checkExpansion(float x,float y,bool update){
+    // +-50 pixels for more strict resizing
+    int extra_pix = 50;
+    int plus_pix = 100;
     bool changed=false;
-    if(x<0){
-      if(update && (abs(x))>expansion.expansions[LEFT]){
-        expansion.expansions[LEFT]=abs(x)+50;
-        ROS_INFO("x %d",x);
+    if(x < extra_pix){
+      if(update && (fabs(x))>expansion.expansions[LEFT]){
+        expansion.expansions[LEFT]=fabs(x) + plus_pix;
       }
       changed=true;
     }
-    if(x>=(int)map.info.width){
-      if(update && (abs(x-map.info.width))>expansion.expansions[RIGHT]){
-        expansion.expansions[RIGHT]=abs(x-map.info.width)+50;
-        ROS_INFO("x %d",x);
+    if(x >= (int)map.info.width - extra_pix){
+      if(update && (fabs(x-map.info.width))>expansion.expansions[RIGHT]){
+        expansion.expansions[RIGHT]=fabs(x-map.info.width) + plus_pix;
       }
       changed=true;
     }
-    if(y<0){
-      if(update && (abs(y))>expansion.expansions[UP]){
-        expansion.expansions[UP]=abs(y)+50;
-        ROS_INFO("y %d",y);
+    if(y < extra_pix){
+      if(update && (fabs(y))>expansion.expansions[UP]){
+        expansion.expansions[UP]=fabs(y) + plus_pix;
       }
       changed=true;
     }
-    if(y>=(int)map.info.height){
-      if(update && (abs(y-map.info.height))>expansion.expansions[DOWN]){
-        expansion.expansions[DOWN]=abs(y-map.info.height)+50;
-        ROS_INFO("y %d",y);
+    if(y >= (int)map.info.height - extra_pix){
+      if(update && (fabs(y-map.info.height))>expansion.expansions[DOWN]){
+        expansion.expansions[DOWN]=fabs(y-map.info.height) + plus_pix;
       }
       changed=true;
     }
@@ -523,7 +534,11 @@ namespace crsm_slam{
       expansion.expansions[RIGHT]==0 &&
       expansion.expansions[UP]==0 &&
       expansion.expansions[DOWN]==0 ) return;
-
+    //std::cout << 
+      //expansion.expansions[LEFT] << " " <<
+      //expansion.expansions[RIGHT] << " " <<
+      //expansion.expansions[UP] << " " <<
+      //expansion.expansions[DOWN] << "\n";
     map.expandMap(expansion);
   }
 
@@ -544,19 +559,20 @@ namespace crsm_slam{
     expansion.expansions[UP]=0;
     expansion.expansions[DOWN]=0;
 
-    checkExpansion(	robotPose.x+map.info.originx-laser.info.laserMax/slamParams.ocgd,
-      robotPose.y+map.info.originy-laser.info.laserMax/slamParams.ocgd,true);
-    checkExpansion(	robotPose.x+map.info.originx+laser.info.laserMax/slamParams.ocgd,
-      robotPose.y+map.info.originy+laser.info.laserMax/slamParams.ocgd,true);
-    expandMap();
-
     //	Fix map size according to the laser scans
-    for(unsigned int i=0;i<laser.info.laserRays;i++){
+    for(unsigned int i = 0 ; i < laser.info.laserRays ; i++){
       float xPoint,yPoint;
-      xPoint=laser.scan.distance[i]/slamParams.ocgd*cos(robotPose.theta+(float)i/(float)laser.info.laserRays*laser.info.laserAngle+laser.info.laserAngleBegin) + robotPose.x+map.info.originx;
-      yPoint=laser.scan.distance[i]/slamParams.ocgd*sin(robotPose.theta+(float)i/(float)laser.info.laserRays*laser.info.laserAngle+laser.info.laserAngleBegin) + robotPose.y+map.info.originy;
-    }
-
+      xPoint=
+        (float)laser.scan.distance[i] / (float)slamParams.ocgd * 
+        (float)cos(robotPose.theta + laser.angles[i]) + 
+        (float)robotPose.x + (float)map.info.originx + 3;
+      yPoint = 
+        (float)laser.scan.distance[i] / (float)slamParams.ocgd * 
+        (float)sin(robotPose.theta + laser.angles[i]) + 
+        (float)robotPose.y+(float)map.info.originy + 3;
+      checkExpansion(xPoint, yPoint, true);
+    } // +3 since we are checking a bit more than the actual measure below
+    expandMap();
     //	Set the map's colorization
     for(unsigned int measid=0;measid<laser.info.laserRays;measid+=1){
       int xt,yt,xtt,ytt;
@@ -567,14 +583,23 @@ namespace crsm_slam{
       if(prevPoints.find(xt*map.info.width+yt)!=prevPoints.end()) continue;
       prevPoints.insert(xt*map.info.width+yt);
 
-      float prevtt = map.p[static_cast<int>(robotPose.x+map.info.originx)][static_cast<int>(robotPose.y+map.info.originy)];
+      float prevtt = map.p
+        [static_cast<int>(robotPose.x+map.info.originx)]
+        [static_cast<int>(robotPose.y+map.info.originy)];
 
-      dMeasure=(int)((float)laser.scan.distance[measid]/slamParams.ocgd);
-      while(R<laser.info.laserMax/slamParams.ocgd-3){
-        float xPoint,yPoint;
-        xPoint=R*cos(robotPose.theta+laser.angles[measid]) + robotPose.x+map.info.originx;
-        yPoint=R*sin(robotPose.theta+laser.angles[measid]) + robotPose.y+map.info.originy;
-        if(checkExpansion((int)xPoint,(int)yPoint,false)) break;
+      dMeasure=(int)((float)laser.scan.distance[measid] / slamParams.ocgd);
+      while(R < dMeasure + 3){
+        int xPoint,yPoint;
+        xPoint = R * cos(robotPose.theta + laser.angles[measid]) 
+          + robotPose.x + map.info.originx;
+        yPoint = R * sin(robotPose.theta + laser.angles[measid]) 
+          + robotPose.y + map.info.originy;
+        
+        if(checkExpansion(xPoint, yPoint, false)) 
+        {
+          break;
+        }
+        
         int tt=map.p[(unsigned int)xPoint][(unsigned int)yPoint];
 
         float oldtt = map.p[(unsigned int)xPoint][(unsigned int)yPoint];
@@ -582,9 +607,9 @@ namespace crsm_slam{
         float diff=fabs(tt-127.0)/128.0;
         diff = pow(diff, 0.5);
 
-        if(dMeasure>R || (xt==0 && yt==0))
+        if(dMeasure > R || ( xt == 0 && yt == 0))
           tt+=(1-diff)*meanDensity*slamParams.density;
-        if( dMeasure+1>R && dMeasure-2<R )
+        if( dMeasure + 1 > R && dMeasure - 2 < R )
           tt-=(1-diff)*meanDensity*slamParams.obstacle_density*slamParams.density;
 
         map.p[(unsigned int)xPoint][(unsigned int)yPoint]=tt;
@@ -604,7 +629,12 @@ namespace crsm_slam{
    **/
   void CrsmSlam::startLaserSubscriber(){
 
-    clientLaserValues = n.subscribe( slamParams.laser_subscriber_topic.c_str() , 1 , &CrsmSlam::fixNewScans , this );
+    clientLaserValues = 
+      n.subscribe( 
+        slamParams.laser_subscriber_topic.c_str(), 
+        1, 
+        &CrsmSlam::fixNewScans, 
+        this);
   }
 
   /**
@@ -654,6 +684,7 @@ namespace crsm_slam{
     grid.info.origin.position.x = -(map.info.originx*slamParams.ocgd);
     grid.info.origin.position.y = -(map.info.originy*slamParams.ocgd);
 
+
     grid.data.resize(width*height) ;
     for(int i=0;i<width;i++){
       for(int j=0;j<height;j++){
@@ -663,7 +694,6 @@ namespace crsm_slam{
           grid.data[j*width+i] = 100;
         else
           grid.data[j*width+i] = 51;
-//        grid.data[j*width+i]= 100.0-(int) (map.p[i][j]*100.0/255.0);
       }
     }
     _occupancyGridPublisher.publish(grid);
