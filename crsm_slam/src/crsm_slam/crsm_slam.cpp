@@ -769,6 +769,7 @@ namespace crsm_slam{
 
     // Update trajectory
     geometry_msgs::PoseStamped pathPoint;
+    pathPoint.header.stamp = timestamp;
     pathPoint.pose.position.x = rx; 
     pathPoint.pose.position.y = ry; 
     tf::Quaternion q;
