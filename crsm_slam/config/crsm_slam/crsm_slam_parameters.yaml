@@ -1,20 +1,18 @@
 #~ Topics for publishing/subscribing
-
 occupancy_grid_publish_topic : /slam/occupancyGridMap
 robot_trajectory_publish_topic : /robot_trajectory
 trajectory_publisher_frame_id : map
 laser_subscriber_topic : /laser/scan
+pose_publish_topic: /pose
+publish_tf: true
 
-#~ Tf frames 
-
-world_frame : world
+#~ Tf frames
 base_footprint_frame : base_footprint
 base_frame : base_link
 map_frame : map
 laser_frame : laser
 
 #~ SLAM parameters
-
 hill_climbing_disparity : 40
 slam_container_size : 500
 slam_occupancy_grid_dimentionality : 0.02
@@ -25,12 +23,10 @@ max_hill_climbing_iterations : 40000
 desired_number_of_picked_rays : 40
 
 #~ Publishing frequencies (Hz)
-
 occupancy_grid_map_freq : 1.0
 robot_pose_tf_freq : 5.0
 trajectory_freq : 1.0
 
 #~ Robot parameters
-
 robot_width : 0.6
 robot_length : 0.75

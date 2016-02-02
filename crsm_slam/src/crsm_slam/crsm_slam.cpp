@@ -58,6 +58,11 @@ namespace crsm_slam
     expansion.expansions.insert(std::pair<CrsmDirection, int>(LEFT, 0));
     expansion.expansions.insert(std::pair<CrsmDirection, int>(UP, 0));
     expansion.expansions.insert(std::pair<CrsmDirection, int>(DOWN, 0));
+
+
+    // initialize pose publisher
+    _posePublisher =
+      n.advertise<geometry_msgs::PoseWithCovarianceStamped>(slamParams.pose_publish_topic, 1);
   }
 
   /**
@@ -108,12 +113,24 @@ namespace crsm_slam
       slamParams.laser_subscriber_topic = "/crsm_slam/laser_scan" ;
     }
 
-    if (n.hasParam("/crsm_slam/world_frame"))
-      n.getParam("/crsm_slam/world_frame", slamParams.world_frame);
+    if (n.hasParam("/crsm_slam/pose_publish_topic"))
+      n.getParam("/crsm_slam/pose_publish_topic", 
+        slamParams.pose_publish_topic);
     else 
     {
-      ROS_WARN("[CrsmSlam] : Parameter world_frame not found. Using Default");
-      slamParams.world_frame = "world" ;
+      ROS_WARN("[CrsmSlam] : Parameter pose_publish_topic not found.\
+        Using Default");
+      slamParams.pose_publish_topic = "/crsm_slam/pose" ;
+    }
+
+    if (n.hasParam("/crsm_slam/publish_tf"))
+      n.getParam("/crsm_slam/publish_tf", 
+        slamParams.publish_tf);
+    else 
+    {
+      ROS_WARN("[CrsmSlam] : Parameter publish_tf not found.\
+        Using Default");
+      slamParams.publish_tf = true ;
     }
 
     if (n.hasParam("/crsm_slam/base_footprint_frame"))
@@ -252,7 +269,7 @@ namespace crsm_slam
     {
       _listener.waitForTransform(
         slamParams.base_frame, slamParams.laser_frame, 
-        ros::Time(0), ros::Duration(1));
+        ros::Time(0), ros::Duration(1.0));
       
       _listener.lookupTransform(
         slamParams.base_frame, slamParams.laser_frame, 
@@ -919,15 +936,27 @@ namespace crsm_slam
     tf::Quaternion rotation;
     rotation.setRPY(0, 0, rth);
 
-    tf::Transform transform(rotation,translation);
-    _slamFrameBroadcaster.sendTransform(
-      tf::StampedTransform(
-        transform,
-        timestamp,
-        slamParams.map_frame,
-        slamParams.base_footprint_frame
-        )
-      );
+    if (slamParams.publish_tf)
+    {
+      tf::Transform transform(rotation,translation);
+      _slamFrameBroadcaster.sendTransform(
+        tf::StampedTransform(
+          transform,
+          timestamp,
+          slamParams.map_frame,
+          slamParams.base_footprint_frame
+          )
+        );
+    }
+
+    // publish pose on pose topic
+    geometry_msgs::PoseWithCovarianceStamped poseOut;
+    poseOut.header.stamp = timestamp;
+    poseOut.header.frame_id = slamParams.map_frame;
+    poseOut.pose.pose.position.x = rx;
+    poseOut.pose.pose.position.y = ry;
+    tf::quaternionTFToMsg(rotation, poseOut.pose.pose.orientation);
+    _posePublisher.publish(poseOut);
 
     // Update trajectory
     geometry_msgs::PoseStamped pathPoint;
@@ -1163,16 +1192,6 @@ namespace crsm_slam
   }
 
   /**
-    @brief Sets the world_frame of CRSM_SlamParameters
-    @param frame [std::string] Holds the world frame
-    @return void
-   **/
-  void CrsmSlam::setWorldFrame(std::string frame)
-  {
-    slamParams.world_frame = frame;
-  }
-
-  /**
     @brief Sets the base_footprint_frame of CRSM_SlamParameters
     @param frame [std::string] Holds the base footprint frame - (x,y,yaw)
     @return void
@@ -1375,15 +1394,6 @@ namespace crsm_slam
   std::string CrsmSlam::getLaserSubscriberTopic(void)
   {
     return slamParams.laser_subscriber_topic;
-  }
-
-  /**
-    @brief Gets the world_frame of CRSM_SlamParameters
-    @return std::string Holds the world frame
-   **/
-  std::string CrsmSlam::getWorldFrame(void)
-  {
-    return slamParams.world_frame;
   }
 
   /**

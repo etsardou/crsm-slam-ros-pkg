@@ -34,6 +34,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Path.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include "crsm_laser.h"
 #include "crsm_hillClimbing.h"
@@ -56,6 +57,7 @@ namespace crsm_slam
       //!< The occupancy grid map publisher
       ros::Publisher _occupancyGridPublisher; 
       ros::Publisher _pathPublisher; //!< The robot trajectory publisher
+      ros::Publisher _posePublisher; //!< The robot pose publisher
       //!< The tf robpt pose broadcaster
       tf::TransformBroadcaster _slamFrameBroadcaster; 
       //!< Tf listener to aquire the transformation between the laser and the 
@@ -376,13 +378,6 @@ namespace crsm_slam
       void setLaserSubscriberTopic(std::string topic);
 
       /**
-        @brief Sets the world_frame of CRSM_SlamParameters
-        @param frame [std::string] Holds the world frame 
-        @return void
-       **/
-      void setWorldFrame(std::string frame);
-
-      /**
         @brief Sets the base_footprint_frame of CRSM_SlamParameters
         @param frame [std::string] Holds the base footprint frame - (x,y,yaw)
         @return void
@@ -521,12 +516,6 @@ namespace crsm_slam
         @return std::string The laser subscriber topic
        **/
       std::string getLaserSubscriberTopic(void);
-
-      /**
-        @brief Gets the world_frame of CRSM_SlamParameters
-        @return std::string Holds the world frame 
-       **/
-      std::string getWorldFrame(void);
 
       /**
         @brief Gets the base_footprint_frame of CRSM_SlamParameters

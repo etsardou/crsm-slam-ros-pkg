@@ -65,8 +65,10 @@ namespace crsm_slam
     //!< The trajectory frame ID
     std::string trajectory_publisher_frame_id;
     std::string laser_subscriber_topic; //!< The laser subscriber topic
+    std::string pose_publish_topic;
 
-    std::string world_frame; //!< Holds the world frame 
+    bool publish_tf; //!< whether to publish tf or not
+
     //!< Holds the base footprint frame - (x,y,yaw)
     std::string base_footprint_frame; 
     std::string base_frame; //!< Holds the base frame
