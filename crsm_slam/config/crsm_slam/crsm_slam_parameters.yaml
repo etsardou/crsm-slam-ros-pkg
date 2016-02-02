@@ -10,7 +10,6 @@ publish_tf: true
 base_footprint_frame : base_footprint
 base_frame : base_link
 map_frame : map
-laser_frame : laser
 
 #~ SLAM parameters
 hill_climbing_disparity : 40

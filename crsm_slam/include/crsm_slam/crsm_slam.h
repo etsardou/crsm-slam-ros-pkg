@@ -398,13 +398,6 @@ namespace crsm_slam
        **/
       void setMapFrame(std::string frame);
 
-      /**
-        @brief Sets the laser_frame of CRSM_SlamParameters
-        @param frame [std::string] Holds the laser frame
-        @return void
-       **/
-      void setLaserFrame(std::string frame);
-
       //------------------- Getters for slamParameters ----------------------//
 
       /**
@@ -535,11 +528,6 @@ namespace crsm_slam
        **/
       std::string getMapFrame(void);
 
-      /**
-        @brief Gets the laser_frame of CRSM_SlamParameters
-        @return std::string Holds the laser frame
-       **/
-      std::string getLaserFrame(void);
   };
 
 }

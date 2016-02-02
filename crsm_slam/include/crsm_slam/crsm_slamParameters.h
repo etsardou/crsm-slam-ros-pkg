@@ -73,7 +73,6 @@ namespace crsm_slam
     std::string base_footprint_frame; 
     std::string base_frame; //!< Holds the base frame
     std::string map_frame; //!< Holds the map frame
-    std::string laser_frame; //!< Holds the laser frame
   };
 
 }

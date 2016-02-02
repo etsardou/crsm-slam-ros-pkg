@@ -159,14 +159,6 @@ namespace crsm_slam
       slamParams.map_frame = "map" ;
     }
 
-    if (n.hasParam("/crsm_slam/laser_frame"))
-      n.getParam("/crsm_slam/laser_frame", slamParams.laser_frame);
-    else 
-    {
-      ROS_WARN("[CrsmSlam] : Parameter laser_frame not found. Using Default");
-      slamParams.laser_frame = "laser_link" ;
-    }
-
     if (n.hasParam("/crsm_slam/hill_climbing_disparity"))
       n.getParam("/crsm_slam/hill_climbing_disparity", slamParams.disparity);
     else 
@@ -261,27 +253,6 @@ namespace crsm_slam
       ROS_WARN("[CrsmSlam] : Parameter trajectory_freq not found.\
         Using Default");
       slamParams.trajectory_freq = 1.0 ;
-    }
-
-    // Try to find distance between laser and robot center, else initialize to zero
-    tf::StampedTransform tfTransform;
-    try 
-    {
-      _listener.waitForTransform(
-        slamParams.base_frame, slamParams.laser_frame, 
-        ros::Time(0), ros::Duration(1.0));
-      
-      _listener.lookupTransform(
-        slamParams.base_frame, slamParams.laser_frame, 
-        ros::Time(0), tfTransform);
-      
-      tf::Vector3 origin = tfTransform.getOrigin();
-      slamParams.dx_laser_robotCenter = origin[0];
-    }
-    catch (tf::TransformException ex) 
-    {
-      ROS_ERROR("[CrsmSlam] Error in tf : %s", ex.what());
-      slamParams.dx_laser_robotCenter = 0.2;
     }
 
     if (n.hasParam("/crsm_slam/desired_number_of_picked_rays"))
@@ -538,10 +509,30 @@ namespace crsm_slam
    **/
   void CrsmSlam::fixNewScans(const sensor_msgs::LaserScanConstPtr& msg)
   {
-   
     if(!laser.initialized)
     {
       laser.initialize(msg);
+
+      // Try to find distance between laser and robot center, else initialize to zero
+      tf::StampedTransform tfTransform;
+      try
+      {
+        _listener.waitForTransform(
+          slamParams.base_frame, msg->header.frame_id,
+          ros::Time(0), ros::Duration(1.0));
+
+        _listener.lookupTransform(
+          slamParams.base_frame, msg->header.frame_id,
+          ros::Time(0), tfTransform);
+
+        tf::Vector3 origin = tfTransform.getOrigin();
+        slamParams.dx_laser_robotCenter = origin[0];
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("[CrsmSlam] Error in tf : %s", ex.what());
+        slamParams.dx_laser_robotCenter = 0.0;
+      }
     }
 
     static int raysPicked = 0;
@@ -1221,16 +1212,6 @@ namespace crsm_slam
     slamParams.map_frame = frame;
   }
 
-  /**
-    @brief Sets the laser_frame of CRSM_SlamParameters
-    @param frame [std::string] Holds the laser frame
-    @return void
-   **/
-  void CrsmSlam::setLaserFrame(std::string frame)
-  {
-    slamParams.laser_frame = frame;
-  }
-
   //------------------- Getters for slamParameters ----------------------//
 
   /**
@@ -1421,15 +1402,6 @@ namespace crsm_slam
   std::string CrsmSlam::getMapFrame(void)
   {
     return slamParams.map_frame;
-  }
-
-  /**
-    @brief Gets the laser_frame of CRSM_SlamParameters
-    @return std::string Holds the laser frame
-   **/
-  std::string CrsmSlam::getLaserFrame(void)
-  {
-    return slamParams.laser_frame;
   }
 
 }
