@@ -860,12 +860,10 @@ namespace crsm_slam
     {
       for(int j = 0 ; j < height ; j++)
       {
-        if(map.p[i][j] > 128)
-          grid.data[j * width + i] = 0;
-        else if (map.p[i][j] < 126)
-          grid.data[j * width + i] = 100;
-        else
+        if (map.p[i][j] == 127)
           grid.data[j * width + i] = -1;
+        else
+          grid.data[j * width + i] = 100.0-(int) (map.p[i][j]*100.0/255.0);
       }
     }
     _occupancyGridPublisher.publish(grid);
