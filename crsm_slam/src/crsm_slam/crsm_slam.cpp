@@ -41,18 +41,6 @@ namespace crsm_slam
     
     map = CrsmMap(slamParams.map_size);
 
-    int initialPatchWidth = slamParams.robot_width / slamParams.ocgd / 2;
-    int initialPatchLength = slamParams.robot_length / slamParams.ocgd / 2;
-
-    for(int i = -initialPatchLength ; i < initialPatchLength ; i++)
-    {
-      for(int j = -initialPatchWidth ; j < initialPatchWidth ; j++)
-      {
-        map.p[i + map.info.originx - 
-          (int)(slamParams.dx_laser_robotCenter / slamParams.ocgd)]
-          [j + map.info.originy] = 200;
-      }
-    }
 
     expansion.expansions.insert(std::pair<CrsmDirection ,int>(RIGHT, 0));
     expansion.expansions.insert(std::pair<CrsmDirection, int>(LEFT, 0));
@@ -279,6 +267,26 @@ namespace crsm_slam
     {
       ROS_WARN("[CrsmSlam] : Parameter robot_length not found. Using Default");
       slamParams.robot_length = 0.6 ;
+    }
+  }
+
+  /**
+   * @brief Draws a patch underneath the robot's footprint
+   * @return void
+   **/
+  void CrsmSlam::drawInitialPatch(void)
+  {
+    int initialPatchWidth = slamParams.robot_width / slamParams.ocgd / 2;
+    int initialPatchLength = slamParams.robot_length / slamParams.ocgd / 2;
+
+    for(int i = -initialPatchLength ; i < initialPatchLength ; i++)
+    {
+      for(int j = -initialPatchWidth ; j < initialPatchWidth ; j++)
+      {
+        map.p[i + map.info.originx - 
+          (int)(slamParams.dx_laser_robotCenter / slamParams.ocgd)]
+          [j + map.info.originy] = 200;
+      }
     }
   }
 
@@ -533,6 +541,8 @@ namespace crsm_slam
         ROS_ERROR("[CrsmSlam] Error in tf : %s", ex.what());
         slamParams.dx_laser_robotCenter = 0.0;
       }
+
+      drawInitialPatch();
     }
 
     static int raysPicked = 0;
@@ -740,7 +750,7 @@ namespace crsm_slam
         [static_cast<int>(robotPose.y + map.info.originy)];
 
       dMeasure = (int)((float)laser.scan.distance[measid] / slamParams.ocgd);
-      while(R < dMeasure + 3){
+      while(R < dMeasure + 3){ // populate this many cells as obstacle
         int xPoint, yPoint;
         xPoint = R * cos(robotPose.theta + laser.angles[measid])
           + robotPose.x + map.info.originx;
@@ -855,7 +865,7 @@ namespace crsm_slam
         else if (map.p[i][j] < 126)
           grid.data[j * width + i] = 100;
         else
-          grid.data[j * width + i] = 51;
+          grid.data[j * width + i] = -1;
       }
     }
     _occupancyGridPublisher.publish(grid);

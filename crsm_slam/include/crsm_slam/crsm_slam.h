@@ -97,6 +97,12 @@ namespace crsm_slam
        **/
       void updateParameters(void);
 
+      /**
+       * @brief Draws a patch underneath the robot's footprint
+       * @return void
+       **/
+      void drawInitialPatch(void);
+
       bool checkExpansion(float x, float y, bool update);
 
       void expandMap(void);
